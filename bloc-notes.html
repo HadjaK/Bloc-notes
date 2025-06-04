@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloc-notes Intelligent</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 25px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      resize: vertical;
+      background: white;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 5px;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .save-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .clear-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .export-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .delete-all-btn {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-style: italic;
+      color: green;
+      font-size: 0.9rem;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      background-color: #f9f9f9;
+      border-left: 4px solid #007BFF;
+      padding: 10px;
+      border-radius: 5px;
+      position: relative;
+    }
+
+    .restore-btn,
+    .delete-item-btn {
+      position: absolute;
+      top: 10px;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+
+    .restore-btn {
+      right: 45px;
+      background-color: #007BFF;
+      color: white;
+    }
+
+    .delete-item-btn {
+      right: 10px;
+      background-color: #dc3545;
+      color: white;
+    }
+
+    pre {
+      white-space: pre-wrap; /* Garde le retour à la ligne */
+      word-wrap: break-word;
+      font-size: 0.95rem;
+      margin-top: 5px;
+    }
+
+    /* Classe pour boutons réduits */
+    .small-btn {
+      padding: 8px 12px; /* Réduit l'espace interne */
+      font-size: 0.9rem; /* Réduit la taille du texte */
+      width: auto; /* Permet aux boutons de s'adapter à leur contenu */
+    }
+
+    /* Bouton Mode sombre */
+    .dark-mode-toggle {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background-color: #333;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    /* Mode sombre */
+    body.dark-mode {
+      background-color: #121212;
+      color: #eee;
+    }
+
+    body.dark-mode .container {
+      background-color: #1e1e1e;
+      color: #eee;
+    }
+
+    body.dark-mode textarea,
+    body.dark-mode .search-box input {
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- En-tête -->
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>MokoD'Bloc-notes</h2>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Mode sombre</button>
+    </header>
+
+    <!-- Zone de saisie -->
+    <textarea id="note" placeholder="Écris ici..."></textarea>
+
+    <!-- Boutons d'action -->
+    <button class="save-btn small-btn" onclick="saveNote()">
+      <i class="fas fa-save"></i> Sauvegarder
+    </button>
+    <button class="clear-btn small-btn" onclick="clearNote()">
+      <i class="fas fa-trash-alt"></i> Réinitialiser
+    </button>
+    <button class="export-btn small-btn" onclick="exportCurrentNote()">
+      <i class="fas fa-file-export"></i> Exporter cette note
+    </button>
+    <button class="export-btn small-btn" onclick="exportAllNotes()">
+      <i class="fas fa-archive"></i> Exporter tout l'historique
+    </button>
+
+    <!-- Statut -->
+    <p id="status">✅ Données chargées.</p>
+
+    <!-- Barre de recherche -->
+    <div class="search-box">
+      <input type="text" id="searchInput" onkeyup="filterHistory()" placeholder="🔍 Rechercher dans l'historique..." />
+    </div>
+
+    <!-- Historique -->
+    <h3>Historique des notes</h3>
+    <button class="delete-all-btn small-btn" onclick="deleteAllHistory()">
+      <i class="fas fa-trash-alt"></i> Supprimer tout l'historique
+    </button>
+    <div class="history-list" id="historyList">
+      <!-- Les anciennes notes apparaîtront ici -->
+    </div>
+  </div>
+
+  <script>
+    // Fonctions inchangées (tu peux garder celles de la version précédente)
+    function saveNote() {
+      const content = document.getElementById("note").value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      if (content) {
+        let history = JSON.parse(localStorage.getItem("noteHistory")) || [];
+        history.unshift({ timestamp, content });
+        localStorage.setItem("noteHistory", JSON.stringify(history));
+        displayHistory();
+        document.getElementById("status").textContent = "✅ Note sauvegardée !";
+      } else {
+        document.getElementById("status").textContent = "⚠️ Rien à sauvegarder.";
+      }
+    }
+
+    function restoreNote(content) {
+      document.getElementById("note").value = content;
+      document.getElementById("status").textContent = "🔄 Note restaurée.";
+    }
+
+    function deleteItem(index) {
+      if (!confirm("Voulez-vous vraiment supprimer cette note ?")) return;
+
+      let history = JSON.parse(localStorage.getItem("noteHistory")) || [];
+      history.splice(index, 1);
+      localStorage.setItem("noteHistory", JSON.stringify(history));
+      displayHistory();
+      document.getElementById("status").textContent = "🗑️ Entrée supprimée.";
+    }
+
+    function deleteAllHistory() {
+      if (!confirm("Voulez-vous vraiment supprimer tout l'historique ?")) return;
+
+      localStorage.removeItem("noteHistory");
+      displayHistory();
+      document.getElementById("status").textContent = "💥 Tout l'historique a été effacé.";
+    }
+
+    function clearNote() {
+      document.getElementById("note").value = "";
+      document.getElementById("status").textContent = "🗑️ Zone vidée.";
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const isDark = document.body.classList.contains("dark-mode");
+      localStorage.setItem("darkMode", isDark);
+    }
+
+    function displayHistory(filteredHistory = null) {
+      const historyDiv = document.getElementById("historyList");
+      historyDiv.innerHTML = "";
+
+      const history = filteredHistory !== null ? filteredHistory : JSON.parse(localStorage.getItem("noteHistory")) || [];
+
+      history.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.innerHTML = `
+          <strong>${item.timestamp}</strong>
+          <pre>${item.content}</pre>
+          <button class="restore-btn" onclick="restoreNote('${item.content.replace(/'/g, "\\'")}')">Restaurer</button>
+          <button class="delete-item-btn" onclick="deleteItem(${index})">Suppr.</button>
+        `;
+        historyDiv.appendChild(div);
+      });
+    }
+
+    function filterHistory() {
+      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+      const history = JSON.parse(localStorage.getItem("noteHistory")) || [];
+
+      const filtered = history.filter(item =>
+        item.content.toLowerCase().includes(searchTerm)
+      );
+
+      displayHistory(filtered);
+    }
+
+    function exportCurrentNote() {
+      const content = document.getElementById("note").value.trim();
+      if (!content) {
+        alert("⚠️ Aucune note à exporter !");
+        return;
+      }
+
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "note-" + new Date().toISOString().slice(0, 10) + ".txt";
+      link.click();
+    }
+
+    function exportAllNotes() {
+      const history = JSON.parse(localStorage.getItem("noteHistory")) || [];
+      if (history.length === 0) {
+        alert("⚠️ Aucune note dans l'historique.");
+        return;
+      }
+
+      let fullExport = "";
+      history.forEach((note, index) => {
+        fullExport += `=== Note ${index + 1} (${note.timestamp}) ===\n`;
+        fullExport += note.content + "\n\n";
+      });
+
+      const blob = new Blob([fullExport], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "historique-notes-" + new Date().toISOString().slice(0, 10) + ".txt";
+      link.click();
+    }
+
+    window.onload = () => {
+      displayHistory();
+      document.getElementById("status").textContent = "✔️ Données chargées.";
+    };
+  </script>
+
+</body>
+</html>
